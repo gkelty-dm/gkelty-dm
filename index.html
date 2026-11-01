@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Glenn's Chess Corner</title>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard.js/1.0.0/chessboard-1.0.0.min.css">
+<style>
+:root{color-scheme:dark;--bg:#0b1120;--panel:#111c30;--line:#263750;--blue:#38bdf8;--muted:#94a3b8}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 0,#142b49 0,#0b1120 55%);color:#e5edf8;font:15px system-ui, sans-serif;min-height:100vh;display:grid;place-items:center;padding:24px}
+main{width:min(100%,760px);background:#101a2b;border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:0 24px 80px #0008}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}h1{font-size:clamp(22px,5vw,32px);margin:0;letter-spacing:.04em}.tag{color:#7dd3fc;border:1px solid #1d4b68;border-radius:99px;padding:6px 10px;font-size:12px}
+.layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(180px,.8fr);gap:20px;align-items:start}
+#board{width:100%;max-width:500px;margin:auto}.side{background:#0b1424;border:1px solid var(--line);border-radius:14px;padding:14px}
+#status{font-weight:650;color:#bae6fd;margin:0 0 12px}.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}button{border:1px solid #31506d;background:#14263d;color:#e5edf8;padding:9px 13px;border-radius:9px;cursor:pointer}button:hover{border-color:var(--blue);background:#173451}
+#moves{height:220px;overflow:auto;color:#cbd5e1;font:13px ui-monospace,monospace;line-height:1.8;white-space:pre-wrap}
+.note{color:var(--muted);font-size:12px;line-height:1.6;margin-top:14px}
+@media(max-width:650px){.layout{grid-template-columns:1fr}#moves{height:120px}main{padding:15px}}
+</style>
+</head>
+<body><main>
+<header><div><h1>♟ GLENN'S CHESS CORNER</h1><div style="color:#94a3b8;margin-top:5px">A little strategy between commits.</div></div><span class="tag">BROWSER CHESS</span></header>
+<div class="layout">
+  <section><p id="status">Loading chessboard…</p><div id="board"></div><div class="controls"><button id="undo">↶ Undo</button><button id="reset">⟲ New game</button><button id="flip">⇅ Flip board</button></div></section>
+  <aside class="side"><strong>♜ Move history</strong><div id="moves" style="margin-top:10px">Make your first move.</div><p class="note">Local two-player game: play White and Black on the same device. Legal moves, check, checkmate, castling, en passant and promotion are handled by the chess rules library.</p></aside>
+</div>
+<p class="note">Designed for <strong>gkelty-dm</strong> · Dark modern edition · Have fun!</p>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard.js/1.0.0/chessboard-1.0.0.min.js"></script>
+<script>
+const game=new Chess();
+const statusEl=document.getElementById('status');
+const movesEl=document.getElementById('moves');
+function status(){
+  if(game.in_checkmate()) return 'Checkmate — '+(game.turn()==='w'?'Black':'White')+' wins.';
+  if(game.in_stalemate()) return 'Draw — stalemate.';
+  if(game.insufficient_material()) return 'Draw — insufficient material.';
+  if(game.in_threefold_repetition()) return 'Draw — threefold repetition.';
+  if(game.in_draw()) return 'Draw.';
+  return (game.turn()==='w'?'White':'Black')+' to move'+(game.in_check()?' · Check':'');
+}
+function refresh(){
+  board.position(game.fen());
+  statusEl.textContent=status();
+  const hist=game.history();
+  if(!hist.length){movesEl.textContent='Make your first move.';return;}
+  let rows=[];
+  for(let i=0;i<hist.length;i+=2) rows.push((Math.floor(i/2)+1)+'. '+hist[i]+(hist[i+1]?'   '+hist[i+1]:''));
+  movesEl.textContent=rows.join('\n');
+  movesEl.scrollTop=movesEl.scrollHeight;
+}
+function onDrop(source,target){
+  const move=game.move({from:source,to:target,promotion:'q'});
+  if(move===null)return 'snapback';
+  refresh();
+}
+function onSnapEnd(){board.position(game.fen());}
+const board=Chessboard('board',{position:'start',draggable:true,dropOffBoard:'snapback',sparePieces:false,pieceTheme:'https://cdnjs.cloudflare.com/ajax/libs/chessboard.js/1.0.0/img/chesspieces/wikipedia/{piece}.png',onDrop:onDrop,onSnapEnd:onSnapEnd,showNotation:true});
+document.getElementById('undo').onclick=()=>{game.undo();refresh();};
+document.getElementById('reset').onclick=()=>{game.reset();refresh();};
+document.getElementById('flip').onclick=()=>board.flip();
+window.addEventListener('resize',()=>board.resize());
+refresh();
+</script></body></html>
